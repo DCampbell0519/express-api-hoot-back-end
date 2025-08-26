@@ -8,6 +8,7 @@ const cors = require('cors')
 const testJwtWRouter = require('./controllers/test-jwt.js')
 const authRouter = require('./controllers/auth.js')
 const userRouter = require('./controllers/user.js')
+const hootRouter = require('./controllers/hoots.js')
 
 mongoose.connect(process.env.MONGODB_URI)
 
@@ -24,6 +25,7 @@ app.use(morgan('dev')) // logs requests to the console
 app.use('/test-jwt', testJwtWRouter)
 app.use('/auth', authRouter)
 app.use('/user', userRouter)
+app.use('/hoots', hootRouter)
 
 
 

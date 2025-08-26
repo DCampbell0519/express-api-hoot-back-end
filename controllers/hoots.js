@@ -1,0 +1,94 @@
+const express = require('express')
+const verifyToken = require('../middleware/verify-token.js')
+const Hoot = require('../models/hoot.js')
+const { verify } = require('jsonwebtoken')
+const router = express.Router()
+
+
+// RESTFUL Routes
+
+// INDEX GET /hoots
+router.get('/', verifyToken, async (req, res) => {
+    try {
+        const hoots = await Hoot.find({})
+            .populate('author')
+            .sort({ createdAt: 'desc' });
+
+            res.status(200).json(hoots)
+    } catch (error) {
+        res.status(500).json({ error: error.message })
+    }
+})
+
+// CREATE POST /hoots -- verifyToken will add the user onto the request (req.user)
+router.post('/', verifyToken, async (req, res) => {
+    try {
+        // req.user gets populated by the verifyToken middleware req.user = {_id: 'okokowd', username: 'Donovan'}
+        // console.log(req.user)
+        req.body.author = req.user._id;
+        // console.log(req.body)
+        const hoot = await Hoot.create(req.body)
+        // hoot._doc.author = req.user
+        res.status(201).json(hoot)
+    } catch (error) {
+        res.status(500).json({ error: error.message })
+    }
+})
+
+// SHOW GET /hoots
+router.get('/:hootId', verifyToken, async (req, res) => {
+    try {
+        const hoot = await Hoot.findById(req.params.hootId)
+            .populate('author')
+
+            res.status(200).json(hoot)
+
+    } catch (error) {
+        res.status(500).json({ error: error.message })
+    }
+})
+
+// UPDATE PUT /hoots/hootId
+router.put('/:hootId', verifyToken, async (req, res) => {
+    try {
+        const hoot = await Hoot.findById(req.params.hootId)
+        
+        if (!hoot.author.equals(req.user._id)) {
+            return res.status(403).send("You're not allowed to do that!")
+        }
+
+        const updatedHoot = await Hoot.findByIdAndUpdate(
+            req.params.hootId,
+            req.body,
+            { new: true } // tell the updatedHoot to give us the new values (without this, we the original found hoot instead of the new one)
+        )
+
+        updatedHoot._doc.author = req.user
+
+        res.status(200).json(updatedHoot)
+
+    } catch (error) {
+        res.status(500).json({ error: error.message })
+    }
+})
+
+// DELETE /hoots/:hootId
+router.delete('/:hootId', verifyToken, async (req, res) => {
+    try {
+        const hoot = await Hoot.findById(req.params.hootId)
+        
+        if (!hoot.author.equals(req.user._id)) {
+            return res.status(403).send("You're not allowed to do that!")
+        }
+
+        const deletedHoot = await Hoot.findByIdAndDelete(req.params.hootId)
+
+        res.status(200).json(deletedHoot)
+
+    } catch (error) {
+        res.status(500).json({ error: error.message })
+    }
+})
+
+
+module.exports = router
