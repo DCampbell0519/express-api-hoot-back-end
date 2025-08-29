@@ -28,7 +28,7 @@ router.post('/', verifyToken, async (req, res) => {
         req.body.author = req.user._id;
         // console.log(req.body)
         const hoot = await Hoot.create(req.body)
-        // hoot._doc.author = req.user
+        hoot._doc.author = req.user
         res.status(201).json(hoot)
     } catch (error) {
         res.status(500).json({ error: error.message })
