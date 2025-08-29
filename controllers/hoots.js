@@ -39,7 +39,7 @@ router.post('/', verifyToken, async (req, res) => {
 router.get('/:hootId', verifyToken, async (req, res) => {
     try {
         const hoot = await Hoot.findById(req.params.hootId)
-            .populate('author')
+            .populate(['author', 'comments.author'])
 
             res.status(200).json(hoot)
 
@@ -84,6 +84,33 @@ router.delete('/:hootId', verifyToken, async (req, res) => {
         const deletedHoot = await Hoot.findByIdAndDelete(req.params.hootId)
 
         res.status(200).json(deletedHoot)
+
+    } catch (error) {
+        res.status(500).json({ error: error.message })
+    }
+})
+
+router.post('/:hootId/comments', verifyToken, async (req, res) => {
+    try {
+        // Find hoot to add comment to
+        const hoot = await Hoot.findById(req.params.hootId)
+        // req.body will be our comment we are trying to add
+        // add the comments' author to the req.body
+        req.body.author = req.user._id;
+
+        // add a new comment to the comments array
+        hoot.comments.push(req.body)
+
+        // save the updated hoot with comment to the database
+        await hoot.save();
+
+        // Find the newly created comment
+        const newComment = hoot.comments[hoot.comments.length -1];
+
+        // populate the author on that new comment
+        newComment._doc.author = req.user;
+
+        res.status(201).json(newComment);
 
     } catch (error) {
         res.status(500).json({ error: error.message })
